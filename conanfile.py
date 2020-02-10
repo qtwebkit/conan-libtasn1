@@ -14,12 +14,15 @@ class Libtasn1Conan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
-    generators = "cmake"
     _source_subfolder = "sources"
 
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
+
+    def configure(self):
+        del self.settings.compiler.libcxx
+        del self.settings.compiler.cppstd
 
     def source(self):
         tools.get(url="http://ftp.gnu.org/gnu/libtasn1/libtasn1-{}.tar.gz".format(self.version),
