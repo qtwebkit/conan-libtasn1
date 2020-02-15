@@ -35,6 +35,12 @@ class Libtasn1Conan(ConanFile):
         os.rename("libtasn1-{}".format(self.version), self._source_subfolder)
 
     def build(self):
+        if self.settings.compiler == "Visual Studio":
+            os.makedirs(os.path.join(self._source_subfolder, "sys"))
+            tools.download("https://raw.githubusercontent.com/win32ports/unistd_h/master/unistd.h",
+                           os.path.join(self._source_subfolder, "unistd.h"))
+            tools.download("https://raw.githubusercontent.com/win32ports/sys_time_h/master/sys/time.h",
+                           os.path.join(self._source_subfolder, "sys", "time.h"))
         with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
             with tools.chdir(self._source_subfolder):
                 env_build = AutoToolsBuildEnvironment(self, win_bash=tools.os_info.is_windows)
@@ -60,11 +66,17 @@ class Libtasn1Conan(ConanFile):
                                  'AR=$PWD/build-aux/ar-lib lib',
                                  'RANLIB=:'])
                 env_build.configure(args=args)
-                env_build.make()
-                env_build.install()
+                with tools.chdir("lib"):
+                    env_build.make()
+                    env_build.install()
 
     def package(self):
         pass
 
     def package_info(self):
-        self.cpp_info.libs = ["tasn1"]
+        if self.options.shared and self.settings.compiler == "Visual Studio":
+            self.cpp_info.libs = ["tasn1.dll.lib"]
+        else:
+            self.cpp_info.libs = ["tasn1"]
+        if not self.options.shared:
+            self.cpp_info.defines.append("ASN1_STATIC")
