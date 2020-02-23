@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     items = []
     for item in builder.items:
-        if item.options["libtasn1:shared"] == True:
+        if item.options["libtasn1:shared"] == False:
             items.append(item)
     builder.items = items
 
