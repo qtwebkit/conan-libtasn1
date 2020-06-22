@@ -17,7 +17,6 @@ class Libtasn1Conan(ConanFile):
     _source_subfolder = "sources"
 
     def build_requirements(self):
-        print(tools.os_info.detect_windows_subsystem())
         if tools.os_info.is_windows and "CONAN_BASH_PATH" not in os.environ:
             self.build_requires("msys2/20190524")
 
@@ -43,6 +42,14 @@ class Libtasn1Conan(ConanFile):
                            os.path.join(self._source_subfolder, "sys", "time.h"))
         with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
             with tools.chdir(self._source_subfolder):
+                host = None
+                build = None
+                if self.settings.compiler == "Visual Studio":
+                    build = False
+                    if self.settings.arch == "x86":
+                        host = "i686-w64-mingw32"
+                    elif self.settings.arch == "x86_64":
+                        host = "x86_64-w64-mingw32"
                 env_build = AutoToolsBuildEnvironment(self, win_bash=tools.os_info.is_windows)
                 args = ["--disable-dependency-tracking", "--disable-doc"]
                 if self.settings.os != "Windows" and self.options.fPIC:
@@ -65,7 +72,7 @@ class Libtasn1Conan(ConanFile):
                                  'STRIP=:',
                                  'AR=$PWD/build-aux/ar-lib lib',
                                  'RANLIB=:'])
-                env_build.configure(args=args)
+                env_build.configure(args=args, build=build, host=host)
                 with tools.chdir("lib"):
                     env_build.make()
                     env_build.install()
